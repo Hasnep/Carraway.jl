@@ -1,0 +1,8 @@
+name = "Carraway"
+uuid = "31bf3045-de98-41f7-8551-83de59f384bf"
+authors = ["Hannes <h@nnes.dev>"]
+version = "0.1.0"
+
+[deps]
+EzXML = "8f5d6c58-4d21-5cfd-889c-e3ad7ee6a615"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
