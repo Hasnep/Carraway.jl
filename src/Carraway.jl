@@ -5,7 +5,7 @@ import Markdown
 
 export tag
 export parse_markdown
-export compile_page
+export build_page
 
 function tag(name)
     # No children
@@ -56,7 +56,7 @@ function parse_markdown(args...; kwargs...)::Vector{EzXML.Node}
     return elements
 end
 
-function compile_page(file_path, page_data::EzXML.Node)
+function build_page(file_path, page_data::EzXML.Node)
     html_document = EzXML.HTMLDocument()
     EzXML.setroot!(html_document, page_data)
     write(file_path, html_document)
