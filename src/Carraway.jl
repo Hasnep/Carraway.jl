@@ -55,4 +55,4 @@ function parse_markdown(args...; kwargs...)::Vector{EzXML.Node}
     return elements
 end
 
-end
+end # module
