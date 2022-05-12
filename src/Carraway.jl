@@ -57,6 +57,7 @@ function parse_markdown(args...; kwargs...)::Vector{EzXML.Node}
 end
 
 function build_page(file_path, page_data::EzXML.Node)
+    @info "Compiling `$file_path`."
     html_document = EzXML.HTMLDocument()
     EzXML.setroot!(html_document, page_data)
     write(file_path, html_document)
