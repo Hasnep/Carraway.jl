@@ -1,8 +1,10 @@
 module Carraway
 
 import EzXML
+import Markdown
 
 export tag
+export parse_markdown
 
 function tag(name)
     # No children
@@ -47,13 +49,10 @@ function tag(name)
     return fn
 end
 
-import Markdown
-export parse_markdown
 function parse_markdown(args...; kwargs...)::Vector{EzXML.Node}
-    elements = Markdown.parse(args...; kwargs...)
-
-    elements = elements |> Markdown.html |> EzXML.parsehtml |> EzXML.root |> EzXML.firstnode |> EzXML.eachelement |> collect
+    elements = Markdown.parse(args...; kwargs...) |> Markdown.html |> EzXML.parsehtml |> EzXML.root |> EzXML.firstnode |> EzXML.eachelement |> collect
     EzXML.unlink!.(elements)
     return elements
 end
+
 end
