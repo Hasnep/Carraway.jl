@@ -4,8 +4,24 @@ import EzXML
 import Markdown
 
 export tag
-export parse_markdown
 export build_page
+
+include("markdown.jl")
+
+function flatten_elements(elements)
+    function append(a_list, to_add)
+        if length(a_list) == 0
+            return [to_add]
+        elseif typeof(last(a_list)) == String && typeof(to_add) == String
+            last_element = pop!(a_list)
+            return vcat(a_list, last_element * to_add)
+        else
+            return vcat(a_list, to_add)
+        end
+    end
+
+    return foldl(append, elements; init=[])
+end
 
 function tag(name)
     # No children
@@ -34,12 +50,14 @@ function tag(name)
     # Vector of children
     function fn(children::Vector; properties...)
         node = fn(; properties...)
-        for child in children
+        for child in flatten_elements(children)
             if child isa String
-                child = EzXML.TextNode(child)
+                child_node = EzXML.TextNode(child)
+                EzXML.link!(node, child_node)
             elseif child isa EzXML.Node
+                child_node = child
+                EzXML.link!(node, child_node)
             end
-            EzXML.link!(node, child)
         end
         return node
     end
@@ -48,12 +66,6 @@ function tag(name)
     fn(child::Function; properties...) = fn(child(); properties...)
 
     return fn
-end
-
-function parse_markdown(args...; kwargs...)::Vector{EzXML.Node}
-    elements = Markdown.parse(args...; kwargs...) |> Markdown.html |> EzXML.parsehtml |> EzXML.root |> EzXML.firstnode |> EzXML.eachelement |> collect
-    EzXML.unlink!.(elements)
-    return elements
 end
 
 function build_page(file_path, page_data::EzXML.Node)
