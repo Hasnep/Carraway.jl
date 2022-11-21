@@ -1,1 +1,5 @@
 Manifest.toml
+
+# Node files
+node_modules/
+package-lock.json

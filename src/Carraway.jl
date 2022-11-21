@@ -1,78 +1,58 @@
 module Carraway
 
-import EzXML
+import Genie
+import KaTeX
+
+# Create functions for all HTML elements
+
+ALL_ELEMENTS = [Genie.Renderer.Html.NORMAL_ELEMENTS; Genie.Renderer.Html.VOID_ELEMENTS]
+
+for element in ALL_ELEMENTS
+  # Create element function
+  Core.eval(@__MODULE__, Meta.parse("const $element = Genie.Renderer.Html.$element"))
+  # Export the function
+  Core.eval(@__MODULE__, Meta.parse("export $element"))
+end
+
+# Re-export the HTML string type that Genie functions return
+const ParsedHTMLString = Genie.Renderer.Html.ParsedHTMLString
+export ParsedHTMLString
+
+# Building
+export build_page
+function build_page(content::ParsedHTMLString, file_path)
+  @info "Building `$file_path`."
+  write(file_path, content)
+end
+
+# Markdown
 import Markdown
 
-export tag
-export build_page
+# markdown_to_html(io::IO, md::Markdown.LaTeX) = print(io, KaTeX.render_katex(md.formula))
+# markdown_to_html(io::IO, md) = print(io, Markdown.html(io, md))
+# markdown_to_html(md) = sprint(markdown_to_html, md)
 
-include("markdown.jl")
+# Do a little type piracy as a treat :)
+Markdown.html(io::IO, md::Markdown.LaTeX) = print(io, KaTeX.render_katex(md.formula))
+Markdown.htmlinline(io::IO, md::Markdown.LaTeX) = print(io, KaTeX.render_katex(md.formula))
 
-function flatten_elements(elements)
-    function append(a_list, to_add)
-        if length(a_list) == 0
-            return [to_add]
-        elseif typeof(last(a_list)) == String && typeof(to_add) == String
-            last_element = pop!(a_list)
-            return vcat(a_list, last_element * to_add)
-        else
-            return vcat(a_list, to_add)
-        end
-    end
+export parse_markdown
+parse_markdown(markdown_string) = markdown_string |> Markdown.parse |> Markdown.html |> ParsedHTMLString
 
-    return foldl(append, elements; init=[])
+# Config
+import TOML
+export get_website_config
+function get_website_config(config_struct, config_file_path=joinpath(pwd(), "config.toml"))
+  config_dict = Dict(Symbol(k) => v for (k, v) in open(TOML.parse, config_file_path))
+  return config_struct(; config_dict...)
 end
 
-function tag(name)
-    # No children
-    function fn(; properties...)
-        node = EzXML.ElementNode(String(Symbol(name)))
-        for (property, value) in properties
-            node[String(property)] = value
-        end
-        return node
-    end
-
-    # String child
-    function fn(child::String; properties...)
-        node = fn(; properties...)
-        EzXML.link!(node, EzXML.TextNode(child))
-        return node
-    end
-
-    # Element child
-    function fn(child::EzXML.Node; properties...)
-        node = fn(; properties...)
-        EzXML.link!(node, child)
-        return node
-    end
-
-    # Vector of children
-    function fn(children::Vector; properties...)
-        node = fn(; properties...)
-        for child in flatten_elements(children)
-            if child isa String
-                child_node = EzXML.TextNode(child)
-                EzXML.link!(node, child_node)
-            elseif child isa EzXML.Node
-                child_node = child
-                EzXML.link!(node, child_node)
-            end
-        end
-        return node
-    end
-
-    # Function child to allow do-syntax
-    fn(child::Function; properties...) = fn(child(); properties...)
-
-    return fn
-end
-
-function build_page(file_path, page_data::EzXML.Node)
-    @info "Compiling `$file_path`."
-    html_document = EzXML.HTMLDocument()
-    EzXML.setroot!(html_document, page_data)
-    write(file_path, html_document)
+# Static
+export copy_static_files
+function copy_static_files()
+  destination = joinpath("build", "static")
+  mkpath(destination)
+  return cp(joinpath(pwd(), "static"), destination; force=true)
 end
 
 end # module
