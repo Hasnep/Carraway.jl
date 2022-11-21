@@ -22,7 +22,7 @@ export ParsedHTMLString
 export build_page
 function build_page(content::ParsedHTMLString, file_path)
   @info "Building `$file_path`."
-  write(file_path, content)
+  write(file_path, "<!DOCTYPE html>" * content)
 end
 
 # Markdown
